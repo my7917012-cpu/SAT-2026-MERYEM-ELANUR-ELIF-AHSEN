@@ -199,6 +199,21 @@ if (!isset($_SESSION["admin_id"])) {
              </div>
 
 
+            <div class="kart">
+
+                 <h3>Menüleri Yönet</h3>
+
+                 <p>
+                      Oluşturduğunuz özel menüleri güncelleyebilir
+                      veya silebilirsiniz.
+                </p>
+
+                 <a href="menu_yonet.php" class="buton">
+                     Menüleri Yönet
+                </a>
+
+            </div>
+
 
             <div class="kart">
 
