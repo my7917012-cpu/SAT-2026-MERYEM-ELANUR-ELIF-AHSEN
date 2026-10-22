@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -195,38 +194,6 @@ if (!isset($_SESSION["admin_id"])) {
                     Menüyü Gör
                 </a>
 
-                <button type="button" class="buton" onclick="menuyuGoster()">
-                        Menüyü Gör
-                </button>
-
-                <div id="menuAlani" style="display: none; margin-top: 20px; background: white; padding: 15px; border-radius: 10px;">
-
-
-                      <button type="button" class="buton" onclick="menuyuKapat()">
-                             Menüyü Kapat
-                              </button>
-
-                                  <iframe
-                                      src="../menu.php"
-                                      title="Restoran Menüsü"
-                                      style="width: 100%; height: 700px; border: none; margin-top: 15px;">
-                                 </iframe>
-
-
-                   </div>
-
-                   <script>
-                                function menuyuGoster() {
-                                  document.getElementById('menuAlani').style.display = 'block';
-                                  document.getElementById('menuAlani').scrollIntoView({ behavior: 'smooth' });
-                            }
-
-                                function menuyuKapat() {
-                                  document.getElementById('menuAlani').style.display = 'none';
-                            }
-                    </script>
-
-
             </div>
 
 
@@ -251,5 +218,3 @@ if (!isset($_SESSION["admin_id"])) {
 </body>
 
 </html>
-
-

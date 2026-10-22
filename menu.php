@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/config/baglanti.php';
 
@@ -244,4 +243,3 @@ try {
 
 </body>
 </html>
-
