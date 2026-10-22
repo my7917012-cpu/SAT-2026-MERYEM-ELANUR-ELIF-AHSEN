@@ -1,3 +1,4 @@
+
 <?php
 
 session_start();
@@ -184,6 +185,23 @@ if (!isset($_SESSION["admin_id"])) {
 
             <div class="kart">
 
+                 <h3>Özel Menüler</h3>
+
+                 <p>
+                       Özel menüler oluşturabilir, ürünleri seçebilir,
+                       menü fiyatı ve indirim tarihlerini belirleyebilirsiniz.
+                </p>
+
+                <a href="menu_olustur.php" class="buton">
+                     Menü Oluştur
+                </a>
+
+             </div>
+
+
+
+            <div class="kart">
+
                 <h3>Menü</h3>
 
                 <p>
@@ -218,3 +236,5 @@ if (!isset($_SESSION["admin_id"])) {
 </body>
 
 </html>
+
+
