@@ -156,6 +156,13 @@ function indirimAktifMi($menu) {
             font-size: 13px;
         }
 
+        .indirim-tarih {
+            color: #555;
+            font-size: 14px;
+            margin-top: 8px;
+ }
+
+
         .menu-fiyat {
             margin: 15px 0;
             font-size: 22px;
@@ -245,6 +252,16 @@ function indirimAktifMi($menu) {
                     <p class="menu-fiyat">
                         <?= tl($gosterilenFiyat) ?>
                     </p>
+
+                <?php if (!empty($menu['indirim_baslangic']) && !empty($menu['indirim_bitis'])): ?>
+                     <p class="indirim-tarih">
+                            İndirim geçerlilik tarihi:
+                     <?= date('d.m.Y H:i', strtotime($menu['indirim_baslangic'])) ?>
+                  -
+                     <?= date('d.m.Y H:i', strtotime($menu['indirim_bitis'])) ?>
+                     </p>
+                 <?php endif; ?>
+                 
 
                 <?php else: ?>
 
