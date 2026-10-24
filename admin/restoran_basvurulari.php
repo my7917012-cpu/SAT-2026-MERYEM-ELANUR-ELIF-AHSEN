@@ -196,7 +196,7 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="kapsayici">
 
-    <a class="geri" href="panel.php">← Yönetici Paneline Dön</a>
+    <a class="geri" href="sistem_paneli.php">← Yönetici Paneline Dön</a>
 
     <h1>Restoran Başvuruları</h1>
 
