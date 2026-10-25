@@ -4,8 +4,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -19,10 +19,17 @@ if (!$kategori_id || $kategori_id < 1) {
     exit("Geçersiz kategori. <a href='urunler.php'>Geri dön</a>");
 }
 
-$kontrol = $db->prepare(
-    "SELECT id, kategori_adi FROM kategoriler WHERE id = ?"
-);
-$kontrol->execute([$kategori_id]);
+$kontrol = $db->prepare("
+    SELECT id, kategori_adi
+    FROM kategoriler
+    WHERE id = ? AND restoran_id = ?
+");
+
+$kontrol->execute([
+    $kategori_id,
+    $_SESSION["restoran_id"]
+]);
+
 $kategori = $kontrol->fetch(PDO::FETCH_ASSOC);
 
 if (!$kategori) {
@@ -111,18 +118,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 : null;
 
             $ekle = $db->prepare("
-                INSERT INTO urunler
-                    (kategori_id, urun_adi, aciklama, fiyat, fotograf)
-                VALUES (?, ?, ?, ?, ?)
-            ");
+                   INSERT INTO urunler
+                  (kategori_id, urun_adi, aciklama, fiyat, fotograf, restoran_id)
+                  VALUES (?, ?, ?, ?, ?, ?)
+             ");
 
             $ekle->execute([
-                $kategori_id,
-                $urun_adi,
-                $aciklama,
-                $fiyat,
-                $fotografYolu
-            ]);
+                 $kategori_id,
+                 $urun_adi,
+                 $aciklama,
+                 $fiyat,
+                 $fotografYolu,
+                  $_SESSION["restoran_id"]
+             ]);
 
             $mesaj = "Ürün başarıyla eklendi.";
         }
@@ -138,10 +146,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $liste = $db->prepare("
     SELECT id, urun_adi, aciklama, fiyat, fotograf
     FROM urunler
-    WHERE kategori_id = ?
+    WHERE kategori_id = ? AND restoran_id = ?
     ORDER BY id DESC
 ");
-$liste->execute([$kategori_id]);
+
+$liste->execute([
+    $kategori_id,
+    $_SESSION["restoran_id"]
+]);
 $urunler = $liste->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>

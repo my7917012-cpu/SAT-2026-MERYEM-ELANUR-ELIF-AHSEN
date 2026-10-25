@@ -4,8 +4,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -384,7 +384,7 @@ if (isset($_GET["guncellendi"])) {
 
         <div>
             <button type="submit">Değişiklikleri Kaydet</button>
-            <a href="panel.php" class="geri">Panele Dön</a>
+            <a href="restoran_paneli.php" class="geri">Restoran Paneline Dön</a>
         </div>
     </form>
 </div>

@@ -3,8 +3,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -16,9 +16,15 @@ if (!$id || $id < 1) {
 
 $sorgu = $db->prepare(
     "SELECT id, kategori_id, urun_adi, aciklama, fiyat
-     FROM urunler WHERE id = ?"
+     FROM urunler
+     WHERE id = ? AND restoran_id = ?"
 );
-$sorgu->execute([$id]);
+
+$sorgu->execute([
+    $id,
+    $_SESSION["restoran_id"]
+]);
+
 $urun = $sorgu->fetch(PDO::FETCH_ASSOC);
 
 if (!$urun) {
@@ -38,17 +44,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $hata = "Geçerli, negatif olmayan bir fiyat gir.";
     } else {
         $guncelle = $db->prepare(
-            "UPDATE urunler
-             SET urun_adi = ?, aciklama = ?, fiyat = ?
-             WHERE id = ?"
-        );
+    "UPDATE urunler
+     SET urun_adi = ?, aciklama = ?, fiyat = ?
+     WHERE id = ? AND restoran_id = ?"
+);
 
         $guncelle->execute([
-            $urun_adi,
-            $aciklama,
-            $fiyat_girdi,
-            $id
-        ]);
+    $urun_adi,
+    $aciklama,
+    $fiyat_girdi,
+    $id,
+    $_SESSION["restoran_id"]
+]);
 
         header("Location: kategori_urunleri.php?id=" . (int)$urun["kategori_id"]);
         exit;

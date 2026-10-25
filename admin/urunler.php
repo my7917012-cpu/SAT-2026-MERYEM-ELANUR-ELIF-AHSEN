@@ -4,8 +4,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -20,17 +20,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         try {
             $kontrol = $db->prepare(
-                "SELECT COUNT(*) FROM urunler WHERE kategori_id = ?"
-            );
-            $kontrol->execute([$kategori_id]);
+                "SELECT COUNT(*)
+                 FROM urunler
+                 WHERE kategori_id = ? AND restoran_id = ?"
+             );
+
+                 $kontrol->execute([
+                 $kategori_id,
+                 $_SESSION["restoran_id"]
+             ]);
 
             if ((int) $kontrol->fetchColumn() > 0) {
                 $hata = "Bu kategoride ürünler var. Silmeden önce ürünleri başka kategoriye taşımalısın.";
             } else {
                 $sil = $db->prepare(
-                    "DELETE FROM kategoriler WHERE id = ?"
-                );
-                $sil->execute([$kategori_id]);
+                    "DELETE FROM kategoriler
+                     WHERE id = ? AND restoran_id = ?"
+             );
+
+                  $sil->execute([
+                  $kategori_id,
+                  $_SESSION["restoran_id"]
+             ]);
 
                 if ($sil->rowCount() > 0) {
                     $mesaj = "Kategori başarıyla silindi.";
@@ -51,9 +62,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
             try {
                 $ekle = $db->prepare(
-                    "INSERT INTO kategoriler (kategori_adi) VALUES (?)"
-                );
-                $ekle->execute([$kategori_adi]);
+                   "INSERT INTO kategoriler (kategori_adi, restoran_id)
+                    VALUES (?, ?)"
+                 );
+             
+                 $ekle->execute([
+                 $kategori_adi,
+                 $_SESSION["restoran_id"]
+             ]);
 
                 $mesaj = "Kategori başarıyla eklendi.";
             } catch (PDOException $e) {
@@ -67,14 +83,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-$sorgu = $db->query("
+$sorgu = $db->prepare("
     SELECT k.id, k.kategori_adi,
            COUNT(u.id) AS urun_sayisi
     FROM kategoriler k
-    LEFT JOIN urunler u ON u.kategori_id = k.id
+    LEFT JOIN urunler u
+        ON u.kategori_id = k.id
+        AND u.restoran_id = ?
+    WHERE k.restoran_id = ?
     GROUP BY k.id, k.kategori_adi
     ORDER BY k.kategori_adi
 ");
+
+$sorgu->execute([
+    $_SESSION["restoran_id"],
+    $_SESSION["restoran_id"]
+]);
 
 $kategoriler = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -193,7 +217,7 @@ button, .buton {
 <body>
 <header>
     <h1>Ürün Yönetimi</h1>
-    <a href="panel.php">Admin Paneline Dön</a>
+    <a href="restoran_paneli.php">Restoran Paneline Dön</a>
 </header>
 
 <main>

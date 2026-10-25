@@ -129,25 +129,35 @@ if (!$restoranSahibi) {
         <div class="kart">
             <h2>Ürünler</h2>
             <p>Restoranınızın ürünlerini yönetin.</p>
-            <span>Ürün yönetimi sonraki adımda bağlanacak.</span>
-        </div>
-
-        <div class="kart">
-            <h2>Kategoriler</h2>
-            <p>Ürün kategorilerinizi yönetin.</p>
-            <span>Kategori yönetimi sonraki adımda bağlanacak.</span>
+            <a class="buton" href="urunler.php">Ürünleri Yönet</a>
         </div>
 
         <div class="kart">
             <h2>Menüler</h2>
-            <p>Özel menülerinizi ve fiyatlarınızı yönetin.</p>
-            <span>Menü yönetimi sonraki adımda bağlanacak.</span>
+            <p>Oluşturduğunuz özel menüleri görüntüleyin.</p>
+            <a class="buton" href="../menu.php">Menüyü Gör</a>
         </div>
 
         <div class="kart">
-            <h2>Restoran Ayarları</h2>
-            <p>Restoran bilgilerinizin yönetimi sonraki adımda bağlanacak.</p>
+            <h2>Menüleri Yönet</h2>
+            <p>Yeni menü oluşturun veya mevcut menülerinizi yönetin.</p>
+
+            <a class="buton" href="menu_yonet.php">Menüleri Yönet</a>
+         </div>
+
+        
+        <div class="kart">
+             <h2>Restoran Ayarları</h2>
+             <p>Restoranınızın adını, adresini ve telefon numarasını güncelleyin.</p>
+             <a href="restoran_ayarlar.php" class="buton">Ayarları Düzenle</a>
         </div>
+
+        <div class="kart">
+             <h2>Güvenlik</h2>
+             <p>Hesabınızın güvenliği için şifrenizi değiştirebilirsiniz.</p>
+             <a href="restoran_sifre_degistir.php" class="buton">Şifre Değiştir</a>
+        </div>
+
 
         <div class="kart">
             <h2>Çıkış Yap</h2>

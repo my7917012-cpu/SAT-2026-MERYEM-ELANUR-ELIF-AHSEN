@@ -4,8 +4,8 @@ session_start();
 require_once __DIR__ . '/../config/baglanti.php';
 
 // Yalnızca giriş yapmış yönetici işlem yapabilir.
-if (!isset($_SESSION['admin_id'])) {
-    header('Location: giris.php');
+if (!isset($_SESSION['restoran_sahibi_id'], $_SESSION['restoran_id'])) {
+    header('Location: restoran_giris.php');
     exit;
 }
 
@@ -39,11 +39,16 @@ if (!$urunId || $urunId < 1) {
 try {
     // Ürünün varlığını ve bağlı olduğu kategoriyi kontrol et.
     $sorgu = $db->prepare(
-        'SELECT kategori_id FROM urunler WHERE id = ?'
-    );
-    $sorgu->execute([$urunId]);
+    'SELECT kategori_id FROM urunler
+     WHERE id = ? AND restoran_id = ?'
+);
 
-    $kategoriId = $sorgu->fetchColumn();
+$sorgu->execute([
+    $urunId,
+    $_SESSION['restoran_id']
+]);
+
+$kategoriId = $sorgu->fetchColumn();
 
     if ($kategoriId === false) {
         http_response_code(404);
@@ -53,9 +58,13 @@ try {
     if ($islem === 'sil') {
         // Ürünü sil.
         $sil = $db->prepare(
-            'DELETE FROM urunler WHERE id = ?'
-        );
-        $sil->execute([$urunId]);
+    'DELETE FROM urunler WHERE id = ? AND restoran_id = ?'
+);
+
+$sil->execute([
+    $urunId,
+    $_SESSION['restoran_id']
+]);
 
         $_SESSION['urun_mesaj'] = 'Ürün başarıyla silindi.';
 
@@ -86,17 +95,18 @@ try {
 
         // Ürün bilgilerini güncelle.
         $guncelle = $db->prepare(
-            'UPDATE urunler
-             SET urun_adi = ?, fiyat = ?, aciklama = ?
-             WHERE id = ?'
-        );
+    'UPDATE urunler
+     SET urun_adi = ?, fiyat = ?, aciklama = ?
+     WHERE id = ? AND restoran_id = ?'
+);
 
-        $guncelle->execute([
-            $urunAdi,
-            $fiyat,
-            $aciklama,
-            $urunId
-        ]);
+$guncelle->execute([
+    $urunAdi,
+    $fiyat,
+    $aciklama,
+    $urunId,
+    $_SESSION['restoran_id']
+]);
 
         $_SESSION['urun_mesaj'] = 'Ürün başarıyla güncellendi.';
 

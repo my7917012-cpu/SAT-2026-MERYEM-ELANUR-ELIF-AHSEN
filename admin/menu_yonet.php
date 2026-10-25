@@ -4,8 +4,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -32,8 +32,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["menu_sil"])) {
             throw new Exception("Geçersiz menü seçildi.");
         }
 
-        $sil = $db->prepare("DELETE FROM ozel_menuler WHERE id = ?");
-        $sil->execute([$menu_id]);
+        $sil = $db->prepare("
+               DELETE FROM ozel_menuler
+               WHERE id = ? AND restoran_id = ?
+         ");
+         $sil->execute([$menu_id, $_SESSION["restoran_id"]]);
 
         if ($sil->rowCount() === 0) {
             throw new Exception("Menü bulunamadı veya zaten silinmiş.");
@@ -55,13 +58,15 @@ if (isset($_GET["silindi"])) {
     $mesaj = "Özel menü başarıyla silindi.";
 }
 
-// Tüm özel menüleri listele
-$sorgu = $db->query("
+
+// Yalnızca giriş yapan restoranın özel menülerini listele
+$sorgu = $db->prepare("
     SELECT
         om.*,
         COUNT(omu.id) AS urun_sayisi
     FROM ozel_menuler om
     LEFT JOIN ozel_menu_urunleri omu ON omu.menu_id = om.id
+    WHERE om.restoran_id = ?
     GROUP BY
         om.id,
         om.menu_adi,
@@ -70,9 +75,12 @@ $sorgu = $db->query("
         om.indirim_baslangic,
         om.indirim_bitis,
         om.aktif,
-        om.olusturma_tarihi
+        om.olusturma_tarihi,
+        om.restoran_id
     ORDER BY om.olusturma_tarihi DESC
 ");
+
+$sorgu->execute([$_SESSION["restoran_id"]]);
 
 $menuler = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 
@@ -184,6 +192,69 @@ function tlYaz($fiyat) {
                 padding: 15px;
             }
         }
+
+        .silme-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+         .silme-modal.aktif {
+             display: flex;
+         }
+
+         .silme-modal-icerik {
+             width: 100%;
+             max-width: 420px;
+             padding: 28px;
+             background: white;
+             border-radius: 12px;
+             text-align: center;
+             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+         .silme-modal-icerik h2 {
+             color: #8b0000;
+             margin-top: 0;
+        }
+
+         .silme-modal-icerik p {
+             line-height: 1.6;
+        }
+
+         .silme-modal-icerik .uyari {
+             color: #dc3545;
+             font-size: 14px;
+         }
+
+         .silme-modal-butonlar {
+             display: flex;
+             justify-content: center;
+             gap: 12px;
+             margin-top: 22px;
+        }
+
+         .silme-modal-butonlar button {
+             padding: 11px 18px;
+             border: none;
+             border-radius: 5px;
+             color: white;
+             cursor: pointer;
+             font-size: 14px;
+        }
+
+         .iptal-buton {
+             background: #555;
+        }
+
+         .onay-buton {
+             background: #dc3545;
+        }
     </style>
 </head>
 
@@ -208,9 +279,9 @@ function tlYaz($fiyat) {
         + Yeni Menü Oluştur
     </a>
 
-    <a href="panel.php" class="buton geri">
-        Admin Paneline Dön
-    </a>
+    <a href="restoran_paneli.php" class="buton geri">
+    Restoran Paneline Dön
+</a>
 
     <?php if (empty($menuler)): ?>
 
@@ -296,32 +367,26 @@ function tlYaz($fiyat) {
                     Güncelle
                 </a>
 
-                <form
-                    method="POST"
-                    style="display:inline-block"
-                    onsubmit="return confirm('Bu özel menüyü silmek istediğine emin misin? Menüdeki ürün kayıtları silinmeyecek.');"
-                >
-                    <input
-                        type="hidden"
-                        name="csrf_token"
-                        value="<?= htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES, "UTF-8") ?>"
+                
+             <form method="POST" class="silme-formu" style="display:inline-block">
+                   <input
+                      type="hidden"
+                      name="csrf_token"
+                      value="<?= htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES, "UTF-8") ?>"
                     >
 
-                    <input
-                        type="hidden"
-                        name="menu_id"
-                        value="<?= (int)$menu["id"] ?>"
-                    >
+                     <input type="hidden" name="menu_id" value="<?= (int)$menu["id"] ?>">
+                     <input type="hidden" name="menu_sil" value="1">
 
-                    <button
-                        type="submit"
-                        name="menu_sil"
-                        value="1"
+                     <button
+                        type="button"
                         class="buton sil"
+                        onclick="silmePenceresiniAc(this)"
                     >
-                        Sil
+                      Sil
                     </button>
-                </form>
+             </form>
+
 
             </div>
 
@@ -330,5 +395,55 @@ function tlYaz($fiyat) {
     <?php endif; ?>
 
 </div>
+
+<div id="silmePenceresi" class="silme-modal">
+    <div class="silme-modal-icerik">
+        <h2>Menüyü Sil</h2>
+
+        <p>Bu özel menüyü silmek istediğinizden emin misiniz?</p>
+        <p class="uyari">Bu işlem geri alınamaz.</p>
+
+        <div class="silme-modal-butonlar">
+            <button type="button" class="iptal-buton" onclick="silmePenceresiniKapat()">
+                Vazgeç
+            </button>
+
+            <button type="button" class="onay-buton" onclick="menuyuSil()">
+                Evet, Sil
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let silinecekForm = null;
+
+    function silmePenceresiniAc(buton) {
+        silinecekForm = buton.closest("form");
+        document.getElementById("silmePenceresi").classList.add("aktif");
+    }
+
+    function silmePenceresiniKapat() {
+        document.getElementById("silmePenceresi").classList.remove("aktif");
+        silinecekForm = null;
+    }
+
+    function menuyuSil() {
+    if (!silinecekForm) {
+        return;
+    }
+
+    const form = silinecekForm;
+    silinecekForm = null;
+
+    form.requestSubmit();
+}
+
+    document.getElementById("silmePenceresi").addEventListener("click", function (event) {
+        if (event.target === this) {
+            silmePenceresiniKapat();
+        }
+    });
+</script>
 </body>
 </html>

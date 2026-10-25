@@ -4,8 +4,8 @@ session_start();
 
 require_once "../config/baglanti.php";
 
-if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+if (!isset($_SESSION["restoran_sahibi_id"], $_SESSION["restoran_id"])) {
+    header("Location: restoran_giris.php");
     exit;
 }
 
@@ -16,13 +16,15 @@ if (!isset($_SESSION["csrf_token"])) {
 $mesaj = "";
 $hata = "";
 
-// Aktif ürünleri getir
-$sorgu = $db->query("
+// Bu restorana ait aktif ürünleri getir
+$sorgu = $db->prepare("
     SELECT id, urun_adi, fiyat
     FROM urunler
-    WHERE aktif = 1
+    WHERE aktif = 1 AND restoran_id = ?
     ORDER BY urun_adi ASC
 ");
+
+$sorgu->execute([$_SESSION["restoran_id"]]);
 $urunler = $sorgu->fetchAll();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -88,11 +90,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $yer_tutucular = implode(",", array_fill(0, count($secilen_urunler), "?"));
 
         $urun_sorgu = $db->prepare("
-            SELECT id
-            FROM urunler
-            WHERE aktif = 1 AND id IN ($yer_tutucular)
-        ");
-        $urun_sorgu->execute($secilen_urunler);
+             SELECT id
+             FROM urunler
+             WHERE aktif = 1
+             AND restoran_id = ?
+             AND id IN ($yer_tutucular)
+         ");
+
+             $urun_sorgu->execute(array_merge(
+             [$_SESSION["restoran_id"]],
+             $secilen_urunler
+         ));
         $gecerli_idler = array_map("intval", $urun_sorgu->fetchAll(PDO::FETCH_COLUMN));
 
         if (count($gecerli_idler) !== count($secilen_urunler)) {
@@ -103,17 +111,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Özel menüyü kaydet
         $ekle = $db->prepare("
-            INSERT INTO ozel_menuler
-            (menu_adi, menu_fiyati, indirim_orani, indirim_baslangic, indirim_bitis, aktif)
-            VALUES (?, ?, ?, ?, ?, 1)
-        ");
+              INSERT INTO ozel_menuler
+              (restoran_id, menu_adi, menu_fiyati, indirim_orani, indirim_baslangic, indirim_bitis, aktif)
+              VALUES (?, ?, ?, ?, ?, ?, 1)
+         ");
 
         $ekle->execute([
-            $menu_adi,
-            (float)$menu_fiyati,
-            (float)$indirim_orani,
-            $baslangic !== "" ? date("Y-m-d H:i:s", strtotime($baslangic)) : null,
-            $bitis !== "" ? date("Y-m-d H:i:s", strtotime($bitis)) : null
+             $_SESSION["restoran_id"],
+             $menu_adi,
+             (float)$menu_fiyati,
+             (float)$indirim_orani,
+             $baslangic !== "" ? date("Y-m-d H:i:s", strtotime($baslangic)) : null,
+             $bitis !== "" ? date("Y-m-d H:i:s", strtotime($bitis)) : null
         ]);
 
         $menu_id = $db->lastInsertId();
@@ -392,7 +401,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div>
             <button type="submit">Özel Menüyü Kaydet</button>
-            <a href="panel.php" class="geri">Panele Dön</a>
+            <a href="restoran_paneli.php" class="geri">Restoran Paneline Dön</a>
         </div>
 
     </form>
