@@ -4,9 +4,9 @@ session_start();
 
 require_once __DIR__ . "/../config/baglanti.php";
 
-// Yalnızca giriş yapmış yönetici erişebilir.
+// Yalnızca giriş yapmış sistem yöneticisi erişebilir.
 if (!isset($_SESSION["admin_id"])) {
-    header("Location: giris.php");
+    header("Location: sistem_giris.php");
     exit;
 }
 
@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if ($sorgu->rowCount() > 0) {
                 $mesaj = ($islem === "onayla")
-                    ? "Başvuru onaylandı."
+                    ? "Başvuru başarıyla onaylandı."
                     : "Başvuru reddedildi.";
             } else {
                 $hata = "Başvuru bulunamadı veya daha önce işleme alınmış.";
@@ -71,6 +71,20 @@ $sorgu = $db->query(
 );
 
 $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
+
+// Durumları Türkçe göster.
+function durumYaz($durum) {
+    switch ($durum) {
+        case "beklemede":
+            return "Beklemede";
+        case "onaylandi":
+            return "Onaylandı";
+        case "reddedildi":
+            return "Reddedildi";
+        default:
+            return $durum;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -89,116 +103,346 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 
         body {
             margin: 0;
-            padding: 25px;
+            padding: 0;
             font-family: Arial, sans-serif;
-            background: #f4f4f4;
+            background: #f4eee8;
+            color: #333;
         }
 
-        .kapsayici {
-            max-width: 1200px;
-            margin: 0 auto;
+        header {
+            background: linear-gradient(120deg, #590014, #8b001e, #650017);
+            color: white;
+            padding: 28px 20px;
+            border-bottom: 4px solid #c49a58;
         }
 
-        h1 {
-            color: #b71c1c;
+        .ust-kapsayici {
+            max-width: 1300px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        header p {
+            color: #f0d9b5;
+            margin: 8px 0 0;
+            font-size: 14px;
+        }
+
+        .geri {
+            display: inline-block;
+            color: #fff;
+            text-decoration: none;
+            border: 1px solid #c49a58;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .geri:hover {
+            background: #c49a58;
+            color: #590014;
+        }
+
+        .container {
+            width: 94%;
+            max-width: 1300px;
+            margin: 30px auto;
+        }
+
+        .sayfa-baslik {
+            margin-bottom: 22px;
+        }
+
+        .sayfa-baslik h2 {
+            color: #650017;
+            font-size: 22px;
+            margin: 0 0 8px;
+        }
+
+        .sayfa-baslik p {
+            color: #777;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .istatistik {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .istatistik-kart {
+            background: white;
+            padding: 18px;
+            border-radius: 9px;
+            border-top: 3px solid #c49a58;
+            box-shadow: 0 3px 12px rgba(70, 20, 20, 0.06);
+        }
+
+        .istatistik-kart span {
+            display: block;
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .istatistik-kart strong {
+            font-size: 24px;
+            color: #650017;
         }
 
         .mesaj {
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            border-radius: 7px;
+            font-size: 14px;
         }
 
         .basari {
             color: #176b32;
             background: #e4f7e9;
+            border-left: 4px solid #218838;
         }
 
         .hata {
-            color: #b71c1c;
+            color: #a32020;
             background: #ffe5e5;
+            border-left: 4px solid #b71c1c;
         }
 
         .tablo-kapsayici {
             overflow-x: auto;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(70, 20, 20, 0.07);
+            border-top: 4px solid #c49a58;
         }
 
         table {
             width: 100%;
+            min-width: 1050px;
             border-collapse: collapse;
-            min-width: 900px;
-        }
-
-        th,
-        td {
-            padding: 13px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
         }
 
         th {
-            background: #b71c1c;
+            background: #650017;
             color: white;
+            padding: 16px 13px;
+            text-align: left;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 13px;
+            border-bottom: 1px solid #eee5df;
+            font-size: 13px;
+            color: #444;
+        }
+
+        tbody tr:hover {
+            background: #fcf7f3;
         }
 
         .durum {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .beklemede {
-            color: #a66a00;
+            color: #946200;
+            background: #fff3cd;
         }
 
         .onaylandi {
             color: #176b32;
+            background: #e1f5e6;
         }
 
         .reddedildi {
-            color: #b71c1c;
+            color: #a32020;
+            background: #ffe5e5;
+        }
+
+        .islem-formu {
+            display: inline-block;
+            margin: 2px;
         }
 
         .buton {
-            padding: 8px 11px;
-            margin: 2px;
+            padding: 8px 12px;
             border: none;
             border-radius: 5px;
             color: white;
             cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.2s;
         }
 
         .onayla {
             background: #218838;
         }
 
-        .reddet {
-            background: #b71c1c;
+        .onayla:hover {
+            background: #176b32;
         }
 
-        .geri {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #b71c1c;
-            text-decoration: none;
+        .reddet {
+            background: #a32020;
+        }
+
+        .reddet:hover {
+            background: #7c1515;
+        }
+
+        .tamamlandi {
+            color: #888;
+            font-size: 12px;
+            white-space: nowrap;
         }
 
         .bos {
-            padding: 20px;
+            padding: 45px 20px;
             text-align: center;
             background: white;
+            border-radius: 10px;
+            border-top: 4px solid #c49a58;
+            box-shadow: 0 4px 15px rgba(70, 20, 20, 0.06);
+        }
+
+        .bos .ikon {
+            font-size: 38px;
+            margin-bottom: 12px;
+        }
+
+        .bos h3 {
+            color: #650017;
+            margin: 0 0 8px;
+        }
+
+        .bos p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        footer {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            padding: 25px 10px;
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 22px 16px;
+            }
+
+            .ust-kapsayici {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            header h1 {
+                font-size: 21px;
+            }
+
+            .container {
+                width: 94%;
+                margin: 22px auto;
+            }
+
+            .istatistik {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .istatistik-kart {
+                padding: 14px;
+            }
+
+            .istatistik-kart strong {
+                font-size: 21px;
+            }
+
+            .sayfa-baslik h2 {
+                font-size: 19px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="kapsayici">
+<header>
+    <div class="ust-kapsayici">
+        <div>
+            <h1>Restoran Başvuruları</h1>
+            <p>Sistem yöneticisi başvuru yönetim ekranı</p>
+        </div>
 
-    <a class="geri" href="sistem_paneli.php">← Yönetici Paneline Dön</a>
+        <a class="geri" href="sistem_paneli.php">
+            ← Yönetici Paneline Dön
+        </a>
+    </div>
+</header>
 
-    <h1>Restoran Başvuruları</h1>
+<div class="container">
+
+    <div class="sayfa-baslik">
+        <h2>Başvuru Yönetimi</h2>
+        <p>Restoran sahiplerinin kayıt başvurularını inceleyebilir ve değerlendirebilirsiniz.</p>
+    </div>
+
+    <?php
+        $bekleyen = 0;
+        $onaylanan = 0;
+        $reddedilen = 0;
+
+        foreach ($basvurular as $b) {
+            if ($b["onay_durumu"] === "beklemede") {
+                $bekleyen++;
+            } elseif ($b["onay_durumu"] === "onaylandi") {
+                $onaylanan++;
+            } elseif ($b["onay_durumu"] === "reddedildi") {
+                $reddedilen++;
+            }
+        }
+    ?>
+
+    <div class="istatistik">
+
+        <div class="istatistik-kart">
+            <span>Toplam Başvuru</span>
+            <strong><?= count($basvurular) ?></strong>
+        </div>
+
+        <div class="istatistik-kart">
+            <span>Bekleyen Başvuru</span>
+            <strong><?= $bekleyen ?></strong>
+        </div>
+
+        <div class="istatistik-kart">
+            <span>Onaylanan Başvuru</span>
+            <strong><?= $onaylanan ?></strong>
+        </div>
+
+    </div>
 
     <?php if ($mesaj !== ""): ?>
         <div class="mesaj basari">
@@ -261,7 +505,7 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 
                         <td>
                             <span class="durum <?= htmlspecialchars($basvuru["onay_durumu"], ENT_QUOTES, "UTF-8") ?>">
-                                <?= htmlspecialchars($basvuru["onay_durumu"], ENT_QUOTES, "UTF-8") ?>
+                                <?= htmlspecialchars(durumYaz($basvuru["onay_durumu"]), ENT_QUOTES, "UTF-8") ?>
                             </span>
                         </td>
 
@@ -269,7 +513,7 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
 
                             <?php if ($basvuru["onay_durumu"] === "beklemede"): ?>
 
-                                <form method="POST" style="display:inline;">
+                                <form method="POST" class="islem-formu">
                                     <input
                                         type="hidden"
                                         name="basvuru_id"
@@ -282,11 +526,11 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
                                         name="islem"
                                         value="onayla"
                                     >
-                                        Onayla
+                                        ✓ Onayla
                                     </button>
                                 </form>
 
-                                <form method="POST" style="display:inline;">
+                                <form method="POST" class="islem-formu">
                                     <input
                                         type="hidden"
                                         name="basvuru_id"
@@ -299,13 +543,13 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
                                         name="islem"
                                         value="reddet"
                                     >
-                                        Reddet
+                                        ✕ Reddet
                                     </button>
                                 </form>
 
                             <?php else: ?>
 
-                                İşlem tamamlandı
+                                <span class="tamamlandi">İşlem tamamlandı</span>
 
                             <?php endif; ?>
 
@@ -322,12 +566,18 @@ $basvurular = $sorgu->fetchAll(PDO::FETCH_ASSOC);
     <?php else: ?>
 
         <div class="bos">
-            Henüz restoran başvurusu bulunmuyor.
+            <div class="ikon">📋</div>
+            <h3>Henüz Başvuru Bulunmuyor</h3>
+            <p>Sisteme henüz herhangi bir restoran başvurusu yapılmamış.</p>
         </div>
 
     <?php endif; ?>
 
 </div>
+
+<footer>
+    © <?= date("Y") ?> Restoran Yönetim Sistemi
+</footer>
 
 </body>
 </html>

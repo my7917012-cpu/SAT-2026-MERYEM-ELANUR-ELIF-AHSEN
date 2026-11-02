@@ -1,9 +1,10 @@
+
 <?php
 session_start();
 
-require_once "../config/baglanti.php";
+require_once __DIR__ . "/../config/baglanti.php";
 
-// Giriş kontrolü
+// GİRİŞ KONTROLÜ
 if (
     !isset($_SESSION["restoran_sahibi_id"]) ||
     !isset($_SESSION["restoran_id"])
@@ -15,20 +16,22 @@ if (
 $mesaj = "";
 $hata = "";
 
-// Restoran bilgilerini getir
+// RESTORAN BİLGİLERİNİ GETİR
 $sorgu = $db->prepare("
     SELECT id, restoran_adi, adres, telefon
     FROM restoranlar
     WHERE id = ?
 ");
+
 $sorgu->execute([$_SESSION["restoran_id"]]);
+
 $restoran = $sorgu->fetch(PDO::FETCH_ASSOC);
 
 if (!$restoran) {
     die("Restoran bilgileri bulunamadı.");
 }
 
-// Form gönderildiğinde
+// FORM GÖNDERİLDİĞİNDE
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $restoran_adi = trim($_POST["restoran_adi"] ?? "");
@@ -36,12 +39,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $telefon = trim($_POST["telefon"] ?? "");
 
     if ($restoran_adi === "") {
+
         $hata = "Restoran adı boş bırakılamaz.";
+
     } else {
+
         try {
+
             $db->beginTransaction();
 
-            // Restoran bilgilerini güncelle
+            // RESTORAN BİLGİLERİNİ GÜNCELLE
             $guncelle = $db->prepare("
                 UPDATE restoranlar
                 SET restoran_adi = ?, adres = ?, telefon = ?
@@ -55,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $_SESSION["restoran_id"]
             ]);
 
-            // Panelde görünen restoran adını da güncelle
+            // RESTORAN SAHİBİ TABLOSUNDAKİ ADI GÜNCELLE
             $sahipGuncelle = $db->prepare("
                 UPDATE restoran_sahipleri
                 SET restoran_adi = ?
@@ -71,11 +78,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $mesaj = "Restoran bilgileriniz başarıyla güncellendi.";
 
-            // Güncel bilgileri tekrar getir
+            // GÜNCEL BİLGİLERİ TEKRAR GETİR
             $sorgu->execute([$_SESSION["restoran_id"]]);
+
             $restoran = $sorgu->fetch(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
+
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
@@ -88,136 +97,334 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Restoran Ayarları</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 30px 15px;
-        }
+<title>Restoran Ayarları</title>
 
-        .kutu {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-        }
+<style>
 
-        h1 {
-            margin-top: 0;
-            color: #333;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4eee8;
+    color: #333;
+}
 
-        input,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
+/* ÜST ALAN */
 
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
+header {
+    background: linear-gradient(120deg, #590014, #8b001e, #650017);
+    color: white;
+    padding: 27px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    border-bottom: 4px solid #c49a58;
+    box-shadow: 0 5px 20px rgba(70,0,15,0.18);
+}
 
-        button,
-        .geri {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 11px 16px;
-            border: none;
-            border-radius: 5px;
-            background: #b22222;
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
+header h1 {
+    margin: 0;
+    font-size: 27px;
+    letter-spacing: 0.5px;
+}
 
-        .geri {
-            background: #555;
-            margin-left: 5px;
-        }
+header a {
+    background: white;
+    color: #650017;
+    padding: 12px 17px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
 
-        .mesaj {
-            color: green;
-            margin-bottom: 15px;
-        }
+header a:hover {
+    background: #c49a58;
+    color: white;
+}
 
-        .hata {
-            color: #b22222;
-            margin-bottom: 15px;
-        }
-    </style>
+/* ANA ALAN */
+
+.container {
+    max-width: 750px;
+    margin: 40px auto;
+    padding: 0 18px;
+}
+
+.kutu {
+    background: white;
+    padding: 32px;
+    border-radius: 13px;
+    border-top: 5px solid #800020;
+    box-shadow: 0 6px 22px rgba(75,20,30,0.09);
+}
+
+.kutu h2 {
+    color: #800020;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 23px;
+}
+
+.aciklama {
+    color: #777;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+/* FORM ALANLARI */
+
+.form-grup {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #650017;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #d9c9c0;
+    border-radius: 7px;
+    font-size: 15px;
+    font-family: Arial, sans-serif;
+    background: #fffdfb;
+    color: #333;
+    outline: none;
+    transition: 0.3s;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #800020;
+    box-shadow: 0 0 0 3px rgba(128,0,32,0.08);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 110px;
+}
+
+/* BUTONLAR */
+
+.butonlar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+button,
+.geri {
+    display: inline-block;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button {
+    background: #800020;
+    color: white;
+}
+
+button:hover {
+    background: #a77c43;
+    transform: translateY(-2px);
+}
+
+.geri {
+    background: #eee5df;
+    color: #650017;
+}
+
+.geri:hover {
+    background: #c49a58;
+    color: white;
+}
+
+/* MESAJLAR */
+
+.mesaj {
+    background: #eaf7ee;
+    color: #16703a;
+    border-left: 4px solid #238447;
+    padding: 14px;
+    border-radius: 6px;
+    margin-bottom: 22px;
+}
+
+.hata {
+    background: #fff0f0;
+    color: #9c1825;
+    border-left: 4px solid #b71c1c;
+    padding: 14px;
+    border-radius: 6px;
+    margin-bottom: 22px;
+}
+
+/* MOBİL */
+
+@media (max-width: 600px) {
+
+    header {
+        padding: 23px 18px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .container {
+        margin: 25px auto;
+    }
+
+    .kutu {
+        padding: 22px 18px;
+    }
+
+    .butonlar {
+        flex-direction: column;
+    }
+
+    .butonlar button,
+    .butonlar a {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+</style>
+
 </head>
 
 <body>
 
-<div class="kutu">
+<header>
 
     <h1>Restoran Ayarları</h1>
 
-    <?php if ($mesaj !== ""): ?>
-        <p class="mesaj">
-            <?= htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8") ?>
+    <a href="restoran_paneli.php">
+        Restoran Paneline Dön
+    </a>
+
+</header>
+
+<main class="container">
+
+    <section class="kutu">
+
+        <h2>Restoran Bilgilerini Düzenle</h2>
+
+        <p class="aciklama">
+            Restoranınızın temel bilgilerini bu sayfadan güncelleyebilirsiniz.
+            Yaptığınız değişiklikler kaydedildiğinde panelde de güncellenecektir.
         </p>
-    <?php endif; ?>
 
-    <?php if ($hata !== ""): ?>
-        <p class="hata">
-            <?= htmlspecialchars($hata, ENT_QUOTES, "UTF-8") ?>
-        </p>
-    <?php endif; ?>
+        <?php if ($mesaj !== ""): ?>
 
-    <form method="POST">
+            <div class="mesaj">
+                <?= htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8") ?>
+            </div>
 
-        <label for="restoran_adi">Restoran Adı</label>
-        <input
-            type="text"
-            id="restoran_adi"
-            name="restoran_adi"
-            value="<?= htmlspecialchars($restoran["restoran_adi"] ?? "", ENT_QUOTES, "UTF-8") ?>"
-            required
-        >
+        <?php endif; ?>
 
-        <label for="adres">Adres</label>
-        <textarea
-            id="adres"
-            name="adres"
-        ><?= htmlspecialchars($restoran["adres"] ?? "", ENT_QUOTES, "UTF-8") ?></textarea>
+        <?php if ($hata !== ""): ?>
 
-        <label for="telefon">Telefon</label>
-        <input
-            type="text"
-            id="telefon"
-            name="telefon"
-            value="<?= htmlspecialchars($restoran["telefon"] ?? "", ENT_QUOTES, "UTF-8") ?>"
-        >
+            <div class="hata">
+                <?= htmlspecialchars($hata, ENT_QUOTES, "UTF-8") ?>
+            </div>
 
-        <button type="submit">Bilgileri Kaydet</button>
+        <?php endif; ?>
 
-        <a href="restoran_paneli.php" class="geri">Panele Dön</a>
+        <form method="POST">
 
-    </form>
+            <div class="form-grup">
 
-</div>
+                <label for="restoran_adi">
+                    Restoran Adı
+                </label>
+
+                <input
+                    type="text"
+                    id="restoran_adi"
+                    name="restoran_adi"
+                    maxlength="150"
+                    value="<?= htmlspecialchars($restoran["restoran_adi"] ?? "", ENT_QUOTES, "UTF-8") ?>"
+                    placeholder="Restoranınızın adını girin"
+                    required
+                >
+
+            </div>
+
+            <div class="form-grup">
+
+                <label for="adres">
+                    Restoran Adresi
+                </label>
+
+                <textarea
+                    id="adres"
+                    name="adres"
+                    placeholder="Restoranınızın adresini girin"
+                ><?= htmlspecialchars($restoran["adres"] ?? "", ENT_QUOTES, "UTF-8") ?></textarea>
+
+            </div>
+
+            <div class="form-grup">
+
+                <label for="telefon">
+                    Telefon Numarası
+                </label>
+
+                <input
+                    type="text"
+                    id="telefon"
+                    name="telefon"
+                    maxlength="30"
+                    value="<?= htmlspecialchars($restoran["telefon"] ?? "", ENT_QUOTES, "UTF-8") ?>"
+                    placeholder="Örn. 0555 555 55 55"
+                >
+
+            </div>
+
+            <div class="butonlar">
+
+                <button type="submit">
+                    Bilgileri Kaydet
+                </button>
+
+                <a href="restoran_paneli.php" class="geri">
+                    Panele Dön
+                </a>
+
+            </div>
+
+        </form>
+
+    </section>
+
+</main>
 
 </body>
 </html>

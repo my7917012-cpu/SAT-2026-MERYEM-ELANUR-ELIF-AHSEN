@@ -40,8 +40,6 @@ if (!$kategori) {
 |--------------------------------------------------------------------------
 | GÖRSEL HAVUZU
 |--------------------------------------------------------------------------
-| Proje klasörü: restoran-QR
-| Görseller: uploads/gorseller/
 */
 
 $havuzKlasoru = realpath(__DIR__ . "/../uploads/gorseller");
@@ -118,19 +116,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 : null;
 
             $ekle = $db->prepare("
-                   INSERT INTO urunler
-                  (kategori_id, urun_adi, aciklama, fiyat, fotograf, restoran_id)
-                  VALUES (?, ?, ?, ?, ?, ?)
-             ");
+                INSERT INTO urunler
+                (kategori_id, urun_adi, aciklama, fiyat, fotograf, restoran_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
 
             $ekle->execute([
-                 $kategori_id,
-                 $urun_adi,
-                 $aciklama,
-                 $fiyat,
-                 $fotografYolu,
-                  $_SESSION["restoran_id"]
-             ]);
+                $kategori_id,
+                $urun_adi,
+                $aciklama,
+                $fiyat,
+                $fotografYolu,
+                $_SESSION["restoran_id"]
+            ]);
 
             $mesaj = "Ürün başarıyla eklendi.";
         }
@@ -154,8 +152,10 @@ $liste->execute([
     $kategori_id,
     $_SESSION["restoran_id"]
 ]);
+
 $urunler = $liste->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -169,160 +169,338 @@ $urunler = $liste->fetchAll(PDO::FETCH_ASSOC);
     box-sizing: border-box;
 }
 
+:root {
+    --bordo: #800020;
+    --bordo-koyu: #590014;
+    --bordo-acik: #a0002a;
+    --altin: #c49a58;
+    --krem: #f4eee8;
+    --beyaz: #ffffff;
+    --metin: #352b2b;
+    --soluk: #786d68;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    color: #333;
+    background: var(--krem);
+    color: var(--metin);
 }
 
+/* ÜST ALAN */
+
 header {
-    background: #b71c1c;
+    position: relative;
+    overflow: hidden;
+    padding: 30px 6%;
     color: white;
-    padding: 20px 5%;
+    background:
+        radial-gradient(circle at 90% 20%, rgba(196,154,88,.16), transparent 25%),
+        linear-gradient(120deg, #590014, #8b001e, #650017);
+    border-bottom: 4px solid var(--altin);
+}
+
+header::after {
+    content: "";
+    position: absolute;
+    width: 230px;
+    height: 230px;
+    right: 5%;
+    top: -115px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 20px rgba(255,255,255,.025),
+        0 0 0 40px rgba(255,255,255,.02);
+    pointer-events: none;
+}
+
+.header-icerik {
+    position: relative;
+    z-index: 1;
+    max-width: 1150px;
+    margin: auto;
+}
+
+.ust-etiket {
+    display: inline-block;
+    color: var(--altin);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
 }
 
 header h1 {
-    margin-top: 0;
+    margin: 0 0 14px;
+    font-size: 30px;
+    font-weight: 800;
 }
 
 header a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: white;
     text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    transition: .2s;
 }
 
 header a:hover {
-    text-decoration: underline;
+    color: var(--altin);
 }
+
+/* ANA ALAN */
 
 main {
-    max-width: 1100px;
-    margin: 28px auto;
-    padding: 0 16px;
+    max-width: 1150px;
+    margin: 30px auto;
+    padding: 0 18px;
 }
 
+/* KARTLAR */
+
 .kutu {
-    background: white;
-    padding: 22px;
-    border-radius: 10px;
-    margin-bottom: 22px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, .05);
+    background: var(--beyaz);
+    padding: 26px;
+    border-radius: 13px;
+    margin-bottom: 25px;
+    border-top: 4px solid var(--bordo);
+    box-shadow: 0 5px 20px rgba(65, 25, 25, .07);
+    transition: .2s;
+}
+
+.kutu:hover {
+    box-shadow: 0 8px 25px rgba(65, 25, 25, .10);
+}
+
+.kutu h2 {
+    color: var(--bordo);
+    margin: 0 0 22px;
+    font-size: 21px;
+}
+
+.kutu h3 {
+    color: var(--bordo);
+    margin-top: 28px;
+    margin-bottom: 8px;
+}
+
+/* FORM */
+
+label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #493b38;
 }
 
 input,
 textarea,
 button {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0 14px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
     font: inherit;
 }
 
+input:not([type="radio"]),
 textarea {
-    min-height: 85px;
+    width: 100%;
+    padding: 13px 14px;
+    margin: 7px 0 18px;
+    border: 1px solid #ded5cf;
+    border-radius: 7px;
+    background: #fffdfa;
+    color: var(--metin);
+    outline: none;
+    transition: .2s;
+}
+
+input:focus,
+textarea:focus {
+    border-color: var(--altin);
+    box-shadow: 0 0 0 3px rgba(196,154,88,.13);
+}
+
+textarea {
+    min-height: 95px;
     resize: vertical;
 }
 
 button {
-    background: #b71c1c;
-    color: white;
-    border: 0;
     cursor: pointer;
 }
 
-button:hover {
-    background: #941616;
+button:disabled {
+    opacity: .65;
+    cursor: not-allowed;
 }
 
+form > button[type="submit"] {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 7px;
+    color: white;
+    background: linear-gradient(120deg, var(--bordo), var(--bordo-koyu));
+    font-weight: bold;
+    transition: .2s;
+}
+
+form > button[type="submit"]:hover {
+    background: var(--bordo-acik);
+    box-shadow: 0 5px 14px rgba(128,0,32,.2);
+    transform: translateY(-1px);
+}
+
+/* MESAJLAR */
+
 .mesaj {
-    color: #16703a;
+    padding: 13px 15px;
+    border-radius: 7px;
+    color: #176b39;
+    background: #e9f7ee;
+    border-left: 4px solid #27864b;
     font-weight: bold;
 }
 
 .hata {
-    color: #b71c1c;
+    padding: 13px 15px;
+    border-radius: 7px;
+    color: #a00020;
+    background: #fff0f0;
+    border-left: 4px solid var(--bordo);
     font-weight: bold;
 }
 
 .gorsel-bilgi {
-    margin: 5px 0 12px;
-    color: #666;
+    margin: 5px 0 16px;
+    color: var(--soluk);
     font-size: 14px;
+    line-height: 1.6;
 }
+
+/* GÖRSEL HAVUZU */
 
 .gorsel-havuzu {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 14px;
-    margin: 14px 0 20px;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 15px;
+    margin: 16px 0 22px;
 }
 
 .gorsel-secim {
     position: relative;
-    border: 2px solid #ddd;
+    display: block;
+    padding: 9px;
+    border: 2px solid #e5ddd7;
     border-radius: 10px;
-    padding: 8px;
+    background: #fffdfa;
     cursor: pointer;
-    transition: border-color .2s, background .2s;
+    transition: .2s;
 }
 
 .gorsel-secim:hover {
-    border-color: #b71c1c;
+    border-color: var(--altin);
+    transform: translateY(-2px);
 }
 
 .gorsel-secim:has(input:checked) {
-    border-color: #b71c1c;
-    background: #fff2f2;
+    border-color: var(--bordo);
+    background: #fff5f4;
+    box-shadow: 0 0 0 2px rgba(128,0,32,.08);
 }
 
 .gorsel-secim input {
     width: auto;
-    margin: 0 5px 8px 0;
-    accent-color: #b71c1c;
+    margin: 0 5px 9px 0;
+    accent-color: var(--bordo);
+    cursor: pointer;
 }
 
 .gorsel-secim img {
     display: block;
     width: 100%;
-    height: 105px;
+    height: 110px;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 7px;
 }
 
 .gorsel-adi {
     display: block;
-    margin-top: 7px;
+    margin-top: 8px;
+    color: #655752;
     font-size: 12px;
     overflow-wrap: anywhere;
 }
 
+/* FOTOĞRAFSIZ SEÇENEĞİ */
+
+.fotografsiz-secim {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    padding: 11px 15px;
+    margin: 5px 0 15px;
+    border: 1px solid #e0d5cd;
+    border-radius: 8px;
+    background: #faf7f3;
+    cursor: pointer;
+}
+
+.fotografsiz-secim input {
+    width: auto;
+    margin: 0 8px 0 0;
+    accent-color: var(--bordo);
+}
+
+/* GÖRSEL ÖNİZLEME */
+
 .onizleme-alani {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 17px;
     flex-wrap: wrap;
-    margin: 12px 0 20px;
-    padding: 12px;
-    background: #f8f8f8;
-    border-radius: 8px;
+    margin: 15px 0 20px;
+    padding: 15px;
+    background: #faf6f0;
+    border: 1px solid #eee2d3;
+    border-radius: 10px;
 }
 
 .onizleme-alani img {
-    width: 130px;
-    height: 100px;
+    width: 135px;
+    height: 105px;
     object-fit: cover;
     border-radius: 8px;
+    border: 2px solid var(--altin);
 }
+
+.onizleme-alani strong {
+    color: var(--bordo);
+}
+
+.onizleme-alani p {
+    margin-bottom: 0;
+    color: var(--soluk);
+    overflow-wrap: anywhere;
+}
+
+/* ÜRÜN TABLOSU */
 
 .tablo {
     width: 100%;
     overflow-x: auto;
+    border-radius: 9px;
+    border: 1px solid #eee5df;
 }
 
 table {
     width: 100%;
+    min-width: 700px;
     border-collapse: collapse;
     background: white;
 }
@@ -330,33 +508,55 @@ table {
 th,
 td {
     text-align: left;
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee7e1;
     vertical-align: middle;
 }
 
 th {
-    background: #f8f8f8;
+    color: var(--bordo);
+    background: #faf5f0;
+    font-size: 13px;
+}
+
+td {
+    font-size: 14px;
+}
+
+tbody tr {
+    transition: background .2s;
+}
+
+tbody tr:hover {
+    background: #fffaf5;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
 }
 
 td a {
     display: inline-block;
-    color: #b71c1c;
+    color: var(--bordo);
     margin: 4px 8px 8px 0;
     font-weight: bold;
     text-decoration: none;
 }
 
 td a:hover {
+    color: var(--bordo-acik);
     text-decoration: underline;
 }
 
 .urun-fotografi {
-    width: 65px;
-    height: 55px;
+    width: 68px;
+    height: 58px;
     object-fit: cover;
-    border-radius: 7px;
+    border-radius: 8px;
+    border: 1px solid #eee0d4;
 }
+
+/* SİLME BUTONU */
 
 .sil-formu {
     display: inline-block;
@@ -367,10 +567,20 @@ td a:hover {
     width: auto;
     min-width: 75px;
     margin: 4px 0;
-    padding: 8px 14px;
-    background: #b71c1c;
+    padding: 9px 14px;
+    color: white;
+    background: var(--bordo);
+    border: none;
     border-radius: 6px;
+    font-weight: bold;
+    transition: .2s;
 }
+
+.sil-formu button:hover {
+    background: #a0002a;
+}
+
+/* ÖZEL SİLME MODALI */
 
 .sil-modal {
     position: fixed;
@@ -380,7 +590,8 @@ td a:hover {
     justify-content: center;
     align-items: center;
     padding: 20px;
-    background: rgba(0, 0, 0, .6);
+    background: rgba(30, 5, 10, .72);
+    backdrop-filter: blur(3px);
 }
 
 .sil-modal.gizli {
@@ -389,11 +600,12 @@ td a:hover {
 
 .sil-modal-kutu {
     width: 100%;
-    max-width: 420px;
-    padding: 28px;
+    max-width: 430px;
+    padding: 30px;
     background: white;
-    border-radius: 14px;
-    box-shadow: 0 15px 45px rgba(0, 0, 0, .25);
+    border-radius: 15px;
+    border-top: 5px solid var(--bordo);
+    box-shadow: 0 18px 55px rgba(0,0,0,.3);
     text-align: center;
     animation: modalAc .2s ease-out;
 }
@@ -410,28 +622,30 @@ td a:hover {
 }
 
 .sil-modal-simge {
-    width: 58px;
-    height: 58px;
-    margin: 0 auto 16px;
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 17px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: #ffebee;
-    color: #b71c1c;
+    background: #fff0f0;
+    color: var(--bordo);
+    border: 2px solid #f0d2d5;
     font-size: 30px;
     font-weight: bold;
 }
 
 .sil-modal-kutu h2 {
     margin: 0 0 12px;
-    color: #333;
+    color: var(--bordo);
     font-size: 22px;
 }
 
 .sil-modal-kutu p {
-    color: #666;
-    line-height: 1.6;
+    color: #716662;
+    line-height: 1.7;
+    font-size: 14px;
 }
 
 .sil-modal-butonlar {
@@ -444,33 +658,72 @@ td a:hover {
     flex: 1;
     width: auto;
     margin: 0;
-    padding: 12px;
+    padding: 13px;
     border-radius: 7px;
     font-weight: bold;
+    border: none;
+    transition: .2s;
 }
 
 .sil-modal-butonlar .sil-vazgec {
-    background: #eee;
-    color: #333;
+    background: #eee9e5;
+    color: #493d38;
+}
+
+.sil-modal-butonlar .sil-vazgec:hover {
+    background: #ded6d0;
 }
 
 .sil-modal-butonlar .sil-onayla {
-    background: #b71c1c;
+    background: var(--bordo);
     color: white;
 }
 
-@media (max-width: 600px) {
-    .kutu {
-        padding: 16px;
+.sil-modal-butonlar .sil-onayla:hover {
+    background: #a0002a;
+}
+
+/* MOBİL */
+
+@media (max-width: 650px) {
+    header {
+        padding: 25px 20px;
     }
 
-    th, td {
-        padding: 9px;
-        font-size: 14px;
+    header h1 {
+        font-size: 24px;
+    }
+
+    main {
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+
+    .kutu {
+        padding: 19px 15px;
+        border-radius: 10px;
+    }
+
+    .kutu h2 {
+        font-size: 19px;
+    }
+
+    .gorsel-havuzu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .gorsel-secim img {
+        height: 95px;
+    }
+
+    .onizleme-alani img {
+        width: 105px;
+        height: 85px;
     }
 
     .sil-modal-kutu {
-        padding: 22px;
+        padding: 23px 18px;
     }
 
     .sil-modal-butonlar {
@@ -483,8 +736,15 @@ td a:hover {
 <body>
 
 <header>
-    <h1><?= htmlspecialchars($kategori["kategori_adi"], ENT_QUOTES, "UTF-8") ?></h1>
-    <a href="urunler.php">← Kategorilere Dön</a>
+    <div class="header-icerik">
+        <span class="ust-etiket">ÜRÜN YÖNETİMİ</span>
+
+        <h1>
+            <?= htmlspecialchars($kategori["kategori_adi"], ENT_QUOTES, "UTF-8") ?>
+        </h1>
+
+        <a href="urunler.php">← Kategorilere Dön</a>
+    </div>
 </header>
 
 <main>
@@ -493,11 +753,15 @@ td a:hover {
     <h2>Yeni Ürün Ekle</h2>
 
     <?php if ($mesaj): ?>
-        <p class="mesaj"><?= htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8") ?></p>
+        <p class="mesaj">
+            <?= htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8") ?>
+        </p>
     <?php endif; ?>
 
     <?php if ($hata): ?>
-        <p class="hata"><?= htmlspecialchars($hata, ENT_QUOTES, "UTF-8") ?></p>
+        <p class="hata">
+            <?= htmlspecialchars($hata, ENT_QUOTES, "UTF-8") ?>
+        </p>
     <?php endif; ?>
 
     <form method="POST">
@@ -535,19 +799,21 @@ td a:hover {
         ></textarea>
 
         <h3>Görsel Havuzundan Seç</h3>
+
         <p class="gorsel-bilgi">
-            Üründe kullanmak istediğin fotoğrafı seç. Fotoğraf seçmek zorunlu değildir.
+            Üründe kullanmak istediğin fotoğrafı seç.
+            Fotoğraf seçmek zorunlu değildir.
         </p>
 
-        <label class="gorsel-secim" style="display:inline-block; width:auto; padding:10px;">
+        <label class="fotografsiz-secim">
             <input type="radio" name="fotograf" value="" checked>
             Fotoğrafsız
         </label>
 
         <?php if (empty($gorseller)): ?>
             <p class="hata">
-                Görsel havuzunda fotoğraf bulunamadı. Klasör yolunu kontrol et:
-                uploads/gorseller/
+                Görsel havuzunda fotoğraf bulunamadı.
+                Klasör yolunu kontrol et: uploads/gorseller/
             </p>
         <?php else: ?>
             <div class="gorsel-havuzu">
@@ -575,7 +841,12 @@ td a:hover {
         <?php endif; ?>
 
         <div class="onizleme-alani" id="onizlemeAlani" hidden>
-            <img id="seciliGorsel" src="" alt="Seçilen fotoğrafın önizlemesi">
+            <img
+                id="seciliGorsel"
+                src=""
+                alt="Seçilen fotoğrafın önizlemesi"
+            >
+
             <div>
                 <strong>Seçilen fotoğraf</strong>
                 <p id="seciliGorselAdi"></p>
@@ -603,13 +874,17 @@ td a:hover {
                         <th>İşlemler</th>
                     </tr>
                 </thead>
+
                 <tbody>
                 <?php foreach ($urunler as $urun): ?>
                     <tr>
                         <td>
                             <?php
                             $urunFotografi = $urun["fotograf"] ?? "";
-                            $fotografDosyasi = basename(str_replace("\\", "/", $urunFotografi));
+                            $fotografDosyasi = basename(
+                                str_replace("\\", "/", $urunFotografi)
+                            );
+
                             $fotografGecerli = (
                                 $urunFotografi !== "" &&
                                 in_array($fotografDosyasi, $gorseller, true) &&
@@ -629,11 +904,17 @@ td a:hover {
                             <?php endif; ?>
                         </td>
 
-                        <td><?= htmlspecialchars($urun["urun_adi"], ENT_QUOTES, "UTF-8") ?></td>
+                        <td>
+                            <?= htmlspecialchars($urun["urun_adi"], ENT_QUOTES, "UTF-8") ?>
+                        </td>
 
-                        <td><?= htmlspecialchars($urun["aciklama"] ?? "", ENT_QUOTES, "UTF-8") ?></td>
+                        <td>
+                            <?= htmlspecialchars($urun["aciklama"] ?? "", ENT_QUOTES, "UTF-8") ?>
+                        </td>
 
-                        <td><?= number_format((float)$urun["fiyat"], 2, ",", ".") ?> TL</td>
+                        <td>
+                            <?= number_format((float)$urun["fiyat"], 2, ",", ".") ?> TL
+                        </td>
 
                         <td>
                             <a href="urun_duzenle.php?id=<?= (int)$urun["id"] ?>">
@@ -645,13 +926,24 @@ td a:hover {
                                 method="POST"
                                 class="sil-formu"
                             >
-                                <input type="hidden" name="urun_id" value="<?= (int)$urun["id"] ?>">
-                                <input type="hidden" name="islem" value="sil">
+                                <input
+                                    type="hidden"
+                                    name="urun_id"
+                                    value="<?= (int)$urun["id"] ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="islem"
+                                    value="sil"
+                                >
+
                                 <input
                                     type="hidden"
                                     name="csrf_token"
                                     value="<?= htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES, "UTF-8") ?>"
                                 >
+
                                 <button type="submit">Sil</button>
                             </form>
                         </td>
@@ -664,6 +956,8 @@ td a:hover {
 </section>
 
 </main>
+
+<!-- ÜRÜN SİLME PENCERESİ -->
 
 <div
     id="silModal"
@@ -683,11 +977,19 @@ td a:hover {
         </p>
 
         <div class="sil-modal-butonlar">
-            <button type="button" class="sil-vazgec" id="silVazgec">
+            <button
+                type="button"
+                class="sil-vazgec"
+                id="silVazgec"
+            >
                 Vazgeç
             </button>
 
-            <button type="button" class="sil-onayla" id="silOnayla">
+            <button
+                type="button"
+                class="sil-onayla"
+                id="silOnayla"
+            >
                 Evet, ürünü sil
             </button>
         </div>
@@ -696,10 +998,13 @@ td a:hover {
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Seçilen görselin önizlemesi
+
+    // GÖRSEL ÖNİZLEME
+
     const gorselSecenekleri = document.querySelectorAll(
         'input[name="fotograf"]'
     );
+
     const onizlemeAlani = document.getElementById("onizlemeAlani");
     const seciliGorsel = document.getElementById("seciliGorsel");
     const seciliGorselAdi = document.getElementById("seciliGorselAdi");
@@ -725,7 +1030,8 @@ document.addEventListener("DOMContentLoaded", function () {
         secenek.addEventListener("change", gorselOnizle);
     });
 
-    // Özel ürün silme penceresi
+    // ÖZEL ÜRÜN SİLME PENCERESİ
+
     const modal = document.getElementById("silModal");
     const vazgec = document.getElementById("silVazgec");
     const onayla = document.getElementById("silOnayla");
@@ -735,6 +1041,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".sil-formu").forEach(function (form) {
         form.addEventListener("submit", function (event) {
             event.preventDefault();
+
             secilenForm = form;
             modal.classList.remove("gizli");
             vazgec.focus();
@@ -762,11 +1069,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape" && !modal.classList.contains("gizli")) {
+        if (
+            event.key === "Escape" &&
+            !modal.classList.contains("gizli")
+        ) {
             modal.classList.add("gizli");
             secilenForm = null;
         }
     });
+
 });
 </script>
 

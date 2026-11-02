@@ -1,6 +1,5 @@
 
 <?php
-
 session_start();
 
 require_once __DIR__ . "/../config/baglanti.php";
@@ -43,12 +42,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,67 +59,120 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         body {
             margin: 0;
+            min-height: 100vh;
             font-family: Arial, sans-serif;
-            background: #f4f4f4;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(196,154,88,0.12), transparent 30%),
+                radial-gradient(circle at 85% 80%, rgba(128,0,32,0.12), transparent 30%),
+                #f4eee8;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 20px;
         }
 
         .login-box {
-            width: 380px;
-            max-width: 92%;
-            background: white;
-            padding: 35px;
+            width: 100%;
+            max-width: 390px;
+            background: #fff;
+            padding: 35px 32px;
             border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border-top: 5px solid #c49a58;
+            box-shadow: 0 8px 25px rgba(70,0,20,0.13);
+        }
+
+        .logo {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: #650017;
+            color: #c49a58;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 27px;
         }
 
         h1 {
             text-align: center;
-            color: #b71c1c;
-            margin-bottom: 30px;
+            color: #650017;
+            font-size: 23px;
+            margin: 0 0 8px;
+        }
+
+        .alt-baslik {
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 28px;
         }
 
         label {
             display: block;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
+            color: #4a2630;
             font-weight: bold;
+            font-size: 14px;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 18px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
+            padding: 13px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd2ca;
+            border-radius: 7px;
+            font-size: 14px;
+            outline: none;
+            background: #fffdfa;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: #8b001e;
+            box-shadow: 0 0 0 3px rgba(139,0,30,0.08);
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: #b71c1c;
+            padding: 13px;
+            background: linear-gradient(120deg, #590014, #8b001e, #650017);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
+            border-radius: 7px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
 
         button:hover {
-            background: #8f1515;
+            filter: brightness(1.12);
+            transform: translateY(-1px);
         }
 
         .hata {
-            background: #ffe5e5;
-            color: #b71c1c;
-            padding: 10px;
-            margin-bottom: 18px;
-            border-radius: 6px;
+            background: #fff0f0;
+            color: #a00020;
+            border: 1px solid #f2caca;
+            padding: 11px;
+            margin-bottom: 20px;
+            border-radius: 7px;
             text-align: center;
+            font-size: 13px;
+        }
+
+        .alt-bilgi {
+            text-align: center;
+            color: #999;
+            font-size: 11px;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 28px 22px;
+            }
         }
     </style>
 </head>
@@ -131,7 +181,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <div class="login-box">
 
-        <h1>Sistem Yöneticisi Girişi</h1>
+        <div class="logo">♨</div>
+
+        <h1>Sistem Yöneticisi</h1>
+
+        <div class="alt-baslik">
+            Yönetim sistemine güvenli giriş
+        </div>
 
         <?php if ($hata !== ""): ?>
             <div class="hata">
@@ -148,6 +204,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 id="kullanici_adi"
                 name="kullanici_adi"
                 placeholder="Kullanıcı adınızı girin"
+                value="<?= htmlspecialchars($_POST["kullanici_adi"] ?? "", ENT_QUOTES, "UTF-8") ?>"
                 autocomplete="username"
                 required
             >
@@ -166,6 +223,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <button type="submit">Giriş Yap</button>
 
         </form>
+
+        <div class="alt-bilgi">
+            QR Menü Yönetim Sistemi
+        </div>
 
     </div>
 
