@@ -60,6 +60,22 @@ function indirimAktifMi($menu) {
     return $simdi >= strtotime($baslangic)
         && $simdi <= strtotime($bitis);
 }
+
+function fotografUrlGecerliMi($url) {
+    if (empty($url)) {
+        return false;
+    }
+
+    $url = trim($url);
+
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    $scheme = strtolower(parse_url($url, PHP_URL_SCHEME) ?? '');
+
+    return in_array($scheme, ['http', 'https'], true);
+}
 ?>
 
 <!DOCTYPE html>
@@ -155,7 +171,7 @@ function indirimAktifMi($menu) {
             box-shadow: 0 5px 18px rgba(75,20,30,0.08);
         }
 
-        /* KATEGORİ KUTUSU GİBİ KÜÇÜK MENÜ BAŞLIĞI */
+        /* MENÜ BAŞLIĞI */
 
         .menu-baslik {
             display: inline-flex;
@@ -238,13 +254,25 @@ function indirimAktifMi($menu) {
             box-shadow: 0 4px 12px rgba(75,20,30,0.08);
         }
 
-        .urun-resim {
+        /* ÜRÜN FOTOĞRAFI */
+
+        .urun-resim,
+        .urun-resim-yok {
             width: 105px;
             height: 105px;
             flex-shrink: 0;
             object-fit: cover;
             border-radius: 7px;
             background: #eee5df;
+        }
+
+        .urun-resim-yok {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #927d6d;
+            font-size: 30px;
+            border: 1px solid #e5d7ca;
         }
 
         .urun-bilgi {
@@ -351,7 +379,8 @@ function indirimAktifMi($menu) {
                 gap: 10px;
             }
 
-            .urun-resim {
+            .urun-resim,
+            .urun-resim-yok {
                 width: 90px;
                 height: 90px;
             }
@@ -366,7 +395,8 @@ function indirimAktifMi($menu) {
         }
 
         @media (max-width: 360px) {
-            .urun-resim {
+            .urun-resim,
+            .urun-resim-yok {
                 width: 75px;
                 height: 75px;
             }
@@ -404,6 +434,7 @@ function indirimAktifMi($menu) {
     <?php else: ?>
 
         <?php foreach ($menuler as $menu): ?>
+
             <?php
             $urunler = $menuUrunleri[$menu['id']] ?? [];
             $indirimVar = indirimAktifMi($menu);
@@ -438,12 +469,14 @@ function indirimAktifMi($menu) {
                     </p>
 
                     <?php if (!empty($menu['indirim_baslangic']) && !empty($menu['indirim_bitis'])): ?>
+
                         <p class="indirim-tarih">
                             İndirim geçerlilik tarihi:
                             <?= date('d.m.Y H:i', strtotime($menu['indirim_baslangic'])) ?>
                             -
                             <?= date('d.m.Y H:i', strtotime($menu['indirim_bitis'])) ?>
                         </p>
+
                     <?php endif; ?>
 
                 <?php else: ?>
@@ -464,12 +497,30 @@ function indirimAktifMi($menu) {
 
                             <article class="urun-kart">
 
-                                <?php if (!empty($urun['fotograf'])): ?>
+                                <?php
+                                $fotografUrl = $urun['fotograf'] ?? '';
+                                ?>
+
+                                <?php if (fotografUrlGecerliMi($fotografUrl)): ?>
+
                                     <img
                                         class="urun-resim"
-                                        src="<?= htmlspecialchars($urun['fotograf'], ENT_QUOTES, 'UTF-8') ?>"
+                                        src="<?= htmlspecialchars(trim($fotografUrl), ENT_QUOTES, 'UTF-8') ?>"
                                         alt="<?= htmlspecialchars($urun['urun_adi'], ENT_QUOTES, 'UTF-8') ?>"
+                                        loading="lazy"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                     >
+
+                                    <div class="urun-resim-yok" style="display:none;">
+                                        📷
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <div class="urun-resim-yok">
+                                        📷
+                                    </div>
+
                                 <?php endif; ?>
 
                                 <div class="urun-bilgi">
@@ -479,9 +530,11 @@ function indirimAktifMi($menu) {
                                     </h3>
 
                                     <?php if (!empty($urun['aciklama'])): ?>
+
                                         <p class="aciklama">
                                             <?= htmlspecialchars($urun['aciklama'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
+
                                     <?php endif; ?>
 
                                     <p class="fiyat">

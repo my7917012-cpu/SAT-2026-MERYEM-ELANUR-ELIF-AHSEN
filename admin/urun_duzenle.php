@@ -19,6 +19,7 @@ if (!$id || $id < 1) {
     exit("Geçersiz ürün. <a href='urunler.php'>Geri dön</a>");
 }
 
+// Ürünü getir
 $sorgu = $db->prepare("
     SELECT id, kategori_id, urun_adi, aciklama, fiyat, fotograf
     FROM urunler
@@ -33,65 +34,33 @@ $sorgu->execute([
 $urun = $sorgu->fetch(PDO::FETCH_ASSOC);
 
 if (!$urun) {
-    exit("Ürün bulunamadı. <a href='urunler.php'>Geri dön</a>");
+    exit("Ürün bulunamadı.");
 }
-
-/*
-|--------------------------------------------------------------------------
-| GÖRSEL HAVUZU
-|--------------------------------------------------------------------------
-*/
-
-$havuzKlasoru = realpath(__DIR__ . "/../uploads/gorseller");
-$havuzUrl = "../uploads/gorseller/";
-
-$gorseller = [];
-
-if ($havuzKlasoru !== false && is_dir($havuzKlasoru)) {
-    $uzantilar = ["jpg", "jpeg", "png", "webp", "gif"];
-
-    foreach (scandir($havuzKlasoru) as $dosya) {
-        if ($dosya === "." || $dosya === "..") {
-            continue;
-        }
-
-        $tamYol = $havuzKlasoru . DIRECTORY_SEPARATOR . $dosya;
-
-        if (
-            is_file($tamYol) &&
-            in_array(strtolower(pathinfo($dosya, PATHINFO_EXTENSION)), $uzantilar, true)
-        ) {
-            $gorseller[] = $dosya;
-        }
-    }
-
-    natcasesort($gorseller);
-    $gorseller = array_values($gorseller);
-}
-
-$mevcutFotograf = $urun["fotograf"] ?? "";
-$mevcutDosya = basename(str_replace("\\", "/", $mevcutFotograf));
-
-$mevcutFotografGecerli = (
-    $mevcutFotograf !== "" &&
-    $havuzKlasoru !== false &&
-    in_array($mevcutDosya, $gorseller, true)
-);
 
 $hata = "";
-$basarili = "";
 
 $urun_adi = $urun["urun_adi"];
 $aciklama = $urun["aciklama"] ?? "";
 $fiyat_girdi = (string)$urun["fiyat"];
-$seciliFotograf = $mevcutFotografGecerli ? $mevcutDosya : "";
+$fotograf = $urun["fotograf"] ?? "";
 
-/*
-|--------------------------------------------------------------------------
-| ÜRÜN GÜNCELLEME
-|--------------------------------------------------------------------------
-*/
+// URL doğrulama
+function gecerliFotografUrl($url) {
+    if ($url === "") {
+        return true;
+    }
 
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    $parca = parse_url($url);
+
+    return isset($parca["scheme"], $parca["host"])
+        && in_array(strtolower($parca["scheme"]), ["http", "https"], true);
+}
+
+// ÜRÜN GÜNCELLEME
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $token = $_POST["csrf_token"] ?? "";
@@ -100,13 +69,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         !is_string($token) ||
         !hash_equals($_SESSION["csrf_token"], $token)
     ) {
-        $hata = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar dene.";
+        $hata = "Güvenlik doğrulaması başarısız. Sayfayı yenile.";
     } else {
 
         $urun_adi = trim($_POST["urun_adi"] ?? "");
         $aciklama = trim($_POST["aciklama"] ?? "");
         $fiyat_girdi = str_replace(",", ".", trim($_POST["fiyat"] ?? ""));
-        $fotografDosyasi = trim($_POST["fotograf"] ?? "");
+        $fotograf = trim($_POST["fotograf"] ?? "");
 
         if ($urun_adi === "") {
             $hata = "Ürün adı boş bırakılamaz.";
@@ -116,20 +85,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             !is_finite((float)$fiyat_girdi) ||
             (float)$fiyat_girdi < 0
         ) {
-            $hata = "Geçerli, negatif olmayan bir fiyat gir.";
-        } elseif (
-            $fotografDosyasi !== "" &&
-            (
-                $havuzKlasoru === false ||
-                !in_array($fotografDosyasi, $gorseller, true)
-            )
-        ) {
-            $hata = "Lütfen görsel havuzunda bulunan bir fotoğraf seç.";
+            $hata = "Geçerli bir fiyat gir.";
+        } elseif (strlen($fotograf) > 2048) {
+            $hata = "Fotoğraf bağlantısı çok uzun.";
+        } elseif (!gecerliFotografUrl($fotograf)) {
+            $hata = "Lütfen geçerli bir http veya https fotoğraf bağlantısı gir.";
         } else {
-
-            $fotografYolu = $fotografDosyasi !== ""
-                ? "uploads/gorseller/" . $fotografDosyasi
-                : null;
 
             $guncelle = $db->prepare("
                 UPDATE urunler
@@ -144,7 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $urun_adi,
                 $aciklama,
                 $fiyat_girdi,
-                $fotografYolu,
+                $fotograf !== "" ? $fotograf : null,
                 $id,
                 $_SESSION["restoran_id"]
             ]);
@@ -152,8 +113,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             header("Location: kategori_urunleri.php?id=" . (int)$urun["kategori_id"]);
             exit;
         }
-
-        $seciliFotograf = $fotografDosyasi;
     }
 }
 ?>
@@ -183,17 +142,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 body {
     margin: 0;
-    padding: 0;
     font-family: Arial, sans-serif;
     background: var(--krem);
     color: var(--metin);
 }
 
-/* BAŞLIK */
-
 header {
-    position: relative;
-    overflow: hidden;
     padding: 30px 6%;
     color: white;
     background:
@@ -205,8 +159,6 @@ header {
 .header-icerik {
     max-width: 750px;
     margin: auto;
-    position: relative;
-    z-index: 1;
 }
 
 .ust-etiket {
@@ -234,8 +186,6 @@ header a:hover {
     color: var(--altin);
 }
 
-/* ANA KART */
-
 main {
     max-width: 750px;
     margin: 35px auto;
@@ -247,7 +197,7 @@ main {
     padding: 28px;
     border-radius: 13px;
     border-top: 4px solid var(--bordo);
-    box-shadow: 0 5px 20px rgba(65, 25, 25, .07);
+    box-shadow: 0 5px 20px rgba(65,25,25,.07);
 }
 
 .kutu h2 {
@@ -255,8 +205,6 @@ main {
     margin: 0 0 23px;
     font-size: 21px;
 }
-
-/* FORM */
 
 label {
     display: block;
@@ -266,7 +214,7 @@ label {
     color: #493b38;
 }
 
-input:not([type="radio"]),
+input,
 textarea {
     width: 100%;
     padding: 13px 14px;
@@ -290,8 +238,6 @@ textarea {
     resize: vertical;
 }
 
-/* FOTOĞRAF ALANI */
-
 .fotograf-baslik {
     margin-top: 30px;
     color: var(--bordo);
@@ -304,136 +250,35 @@ textarea {
     line-height: 1.6;
 }
 
-.mevcut-fotograf {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin: 15px 0 22px;
-    padding: 14px;
-    border: 1px solid #eee2d3;
-    border-radius: 10px;
-    background: #faf6f0;
-}
-
-.mevcut-fotograf img {
-    width: 130px;
-    height: 105px;
-    object-fit: cover;
-    border: 2px solid var(--altin);
-    border-radius: 8px;
-}
-
-.mevcut-fotograf strong {
-    color: var(--bordo);
-}
-
-.mevcut-fotograf p {
-    margin-bottom: 0;
-    color: var(--soluk);
-    font-size: 13px;
-}
-
-.gorsel-havuzu {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 13px;
-    margin: 16px 0;
-}
-
-.gorsel-secim {
-    display: block;
-    padding: 8px;
-    border: 2px solid #e5ddd7;
-    border-radius: 10px;
-    background: #fffdfa;
-    cursor: pointer;
-    transition: .2s;
-}
-
-.gorsel-secim:hover {
-    border-color: var(--altin);
-    transform: translateY(-2px);
-}
-
-.gorsel-secim:has(input:checked) {
-    border-color: var(--bordo);
-    background: #fff5f4;
-    box-shadow: 0 0 0 2px rgba(128,0,32,.08);
-}
-
-.gorsel-secim input {
-    width: auto;
-    margin: 0 5px 8px 0;
-    accent-color: var(--bordo);
-    cursor: pointer;
-}
-
-.gorsel-secim img {
-    display: block;
-    width: 100%;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 7px;
-}
-
-.gorsel-adi {
-    display: block;
-    margin-top: 7px;
-    font-size: 12px;
-    color: #655752;
-    overflow-wrap: anywhere;
-}
-
-.fotografsiz-secim {
-    display: inline-flex;
-    align-items: center;
-    width: auto;
-    padding: 10px 14px;
-    margin: 5px 0 10px;
-    border: 1px solid #e0d5cd;
-    border-radius: 8px;
-    background: #faf7f3;
-    cursor: pointer;
-}
-
-.fotografsiz-secim input {
-    width: auto;
-    margin: 0 8px 0 0;
-    accent-color: var(--bordo);
-}
-
 .onizleme-alani {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin: 18px 0;
-    padding: 14px;
+    margin-top: 18px;
+    padding: 15px;
     border-radius: 10px;
     background: #faf6f0;
     border: 1px solid #eee2d3;
 }
 
 .onizleme-alani img {
-    width: 125px;
-    height: 100px;
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    height: 180px;
     object-fit: cover;
     border-radius: 8px;
     border: 2px solid var(--altin);
+    margin-top: 10px;
 }
 
-.onizleme-alani strong {
+.onizleme-baslik {
     color: var(--bordo);
+    font-weight: bold;
 }
 
-.onizleme-alani p {
-    margin-bottom: 0;
-    color: var(--soluk);
-    overflow-wrap: anywhere;
+.onizleme-hata {
+    color: #a00020;
+    font-size: 13px;
+    margin-top: 10px;
 }
-
-/* MESAJ */
 
 .hata {
     padding: 13px 15px;
@@ -443,8 +288,6 @@ textarea {
     border-left: 4px solid var(--bordo);
     font-weight: bold;
 }
-
-/* BUTONLAR */
 
 .kaydet-btn {
     width: 100%;
@@ -480,8 +323,6 @@ textarea {
     text-decoration: underline;
 }
 
-/* MOBİL */
-
 @media (max-width: 600px) {
     header {
         padding: 25px 20px;
@@ -500,19 +341,8 @@ textarea {
         padding: 20px 16px;
     }
 
-    .gorsel-havuzu {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-
-    .gorsel-secim img {
-        height: 90px;
-    }
-
-    .mevcut-fotograf img,
     .onizleme-alani img {
-        width: 105px;
-        height: 85px;
+        max-width: 100%;
     }
 }
 </style>
@@ -583,90 +413,34 @@ textarea {
         <h3 class="fotograf-baslik">Ürün Fotoğrafı</h3>
 
         <p class="gorsel-bilgi">
-            Ürünün mevcut fotoğrafını görüntüleyebilir veya
-            görsel havuzundan yeni bir fotoğraf seçebilirsin.
+            İnternette bulduğun yemek fotoğrafının doğrudan bağlantısını
+            buraya yapıştırabilirsin. Bilgisayarına fotoğraf indirmen gerekmez.
         </p>
 
-        <?php if ($mevcutFotografGecerli): ?>
-            <div class="mevcut-fotograf">
-                <img
-                    src="<?= htmlspecialchars($havuzUrl . rawurlencode($mevcutDosya), ENT_QUOTES, "UTF-8") ?>"
-                    alt="Mevcut ürün fotoğrafı"
-                >
+        <label for="fotograf">Fotoğraf bağlantısı (URL)</label>
 
-                <div>
-                    <strong>Mevcut ürün fotoğrafı</strong>
-                    <p><?= htmlspecialchars($mevcutDosya, ENT_QUOTES, "UTF-8") ?></p>
-                </div>
-            </div>
-        <?php else: ?>
-            <p class="gorsel-bilgi">Bu ürün için kayıtlı bir fotoğraf bulunmuyor.</p>
-        <?php endif; ?>
-
-        <label class="fotografsiz-secim">
-            <input
-                type="radio"
-                name="fotograf"
-                value=""
-                <?= $seciliFotograf === "" ? "checked" : "" ?>
-            >
-            Fotoğrafsız
-        </label>
-
-        <?php if (empty($gorseller)): ?>
-            <p class="hata">
-                Görsel havuzunda fotoğraf bulunamadı.
-                uploads/gorseller/ klasörünü kontrol et.
-            </p>
-        <?php else: ?>
-
-            <div class="gorsel-havuzu">
-
-                <?php foreach ($gorseller as $gorsel): ?>
-
-                    <label class="gorsel-secim">
-
-                        <input
-                            type="radio"
-                            name="fotograf"
-                            value="<?= htmlspecialchars($gorsel, ENT_QUOTES, "UTF-8") ?>"
-                            data-src="<?= htmlspecialchars($havuzUrl . rawurlencode($gorsel), ENT_QUOTES, "UTF-8") ?>"
-                            <?= $seciliFotograf === $gorsel ? "checked" : "" ?>
-                        >
-
-                        <img
-                            src="<?= htmlspecialchars($havuzUrl . rawurlencode($gorsel), ENT_QUOTES, "UTF-8") ?>"
-                            alt="<?= htmlspecialchars($gorsel, ENT_QUOTES, "UTF-8") ?>"
-                            loading="lazy"
-                        >
-
-                        <span class="gorsel-adi">
-                            <?= htmlspecialchars($gorsel, ENT_QUOTES, "UTF-8") ?>
-                        </span>
-
-                    </label>
-
-                <?php endforeach; ?>
-
-            </div>
-
-        <?php endif; ?>
-
-        <div
-            class="onizleme-alani"
-            id="onizlemeAlani"
-            hidden
+        <input
+            type="url"
+            id="fotograf"
+            name="fotograf"
+            maxlength="2048"
+            placeholder="https://ornek-site.com/yemek-fotografi.jpg"
+            value="<?= htmlspecialchars($fotograf, ENT_QUOTES, "UTF-8") ?>"
         >
+
+        <div class="onizleme-alani" id="onizlemeAlani" hidden>
+            <span class="onizleme-baslik">Fotoğraf önizlemesi</span>
+
             <img
                 id="seciliGorsel"
                 src=""
-                alt="Seçilen fotoğrafın önizlemesi"
+                alt="Ürün fotoğrafı önizlemesi"
+                hidden
             >
 
-            <div>
-                <strong>Yeni seçilen fotoğraf</strong>
-                <p id="seciliGorselAdi"></p>
-            </div>
+            <p class="onizleme-hata" id="onizlemeHata" hidden>
+                Fotoğraf yüklenemedi. Bağlantıyı kontrol et.
+            </p>
         </div>
 
         <button type="submit" class="kaydet-btn">
@@ -689,38 +463,63 @@ textarea {
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    const secenekler = document.querySelectorAll(
-        'input[name="fotograf"]'
-    );
-
+    const fotografInput = document.getElementById("fotograf");
     const onizlemeAlani = document.getElementById("onizlemeAlani");
     const seciliGorsel = document.getElementById("seciliGorsel");
-    const seciliGorselAdi = document.getElementById("seciliGorselAdi");
+    const onizlemeHata = document.getElementById("onizlemeHata");
 
-    function gorselOnizle() {
+    let sonZamanlayici;
 
-        const secilen = document.querySelector(
-            'input[name="fotograf"]:checked'
-        );
+    function onizlemeGoster() {
 
-        if (!secilen || !secilen.value || !secilen.dataset.src) {
+        const url = fotografInput.value.trim();
+
+        clearTimeout(sonZamanlayici);
+
+        if (!url) {
             onizlemeAlani.hidden = true;
+            seciliGorsel.hidden = true;
             seciliGorsel.removeAttribute("src");
-            seciliGorselAdi.textContent = "";
+            onizlemeHata.hidden = true;
             return;
         }
 
-        seciliGorsel.src = secilen.dataset.src;
-        seciliGorselAdi.textContent = secilen.value;
         onizlemeAlani.hidden = false;
+        seciliGorsel.hidden = true;
+        onizlemeHata.hidden = true;
+
+        sonZamanlayici = setTimeout(function () {
+
+            try {
+                const adres = new URL(url);
+
+                if (!["http:", "https:"].includes(adres.protocol)) {
+                    throw new Error("Geçersiz adres");
+                }
+
+                seciliGorsel.onload = function () {
+                    seciliGorsel.hidden = false;
+                    onizlemeHata.hidden = true;
+                };
+
+                seciliGorsel.onerror = function () {
+                    seciliGorsel.hidden = true;
+                    onizlemeHata.hidden = false;
+                };
+
+                seciliGorsel.src = adres.href;
+
+            } catch (error) {
+                seciliGorsel.hidden = true;
+                onizlemeHata.hidden = false;
+            }
+
+        }, 400);
     }
 
-    secenekler.forEach(function (secenek) {
-        secenek.addEventListener("change", gorselOnizle);
-    });
+    fotografInput.addEventListener("input", onizlemeGoster);
 
-    // Sayfa açıldığında mevcut seçimi önizle
-    gorselOnizle();
+    onizlemeGoster();
 
 });
 </script>

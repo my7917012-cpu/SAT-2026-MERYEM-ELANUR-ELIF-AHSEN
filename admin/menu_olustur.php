@@ -18,7 +18,7 @@ if (!isset($_SESSION["csrf_token"])) {
 $mesaj = "";
 $hata = "";
 
-// BU RESTORANA AİT AKTİF ÜRÜNLERİ GETİR
+// RESTORANA AİT AKTİF ÜRÜNLERİ GETİR
 $sorgu = $db->prepare("
     SELECT id, urun_adi, fiyat
     FROM urunler
@@ -34,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     try {
 
+        // CSRF KONTROLÜ
         if (
             !isset($_POST["csrf_token"]) ||
             !hash_equals($_SESSION["csrf_token"], $_POST["csrf_token"])
@@ -47,19 +48,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $baslangic = trim($_POST["indirim_baslangic"] ?? "");
         $bitis = trim($_POST["indirim_bitis"] ?? "");
 
+        // ÜRÜN SEÇİMİ KONTROLÜ
         $secilen_urunler = $_POST["urunler"] ?? [];
 
+        if (!is_array($secilen_urunler)) {
+            $secilen_urunler = [];
+        }
+
+        foreach ($secilen_urunler as $urun_id) {
+            if (!is_scalar($urun_id)) {
+                throw new Exception("Geçersiz ürün seçimi.");
+            }
+        }
+
+        // MENÜ ADI KONTROLÜ
         if ($menu_adi === "") {
             throw new Exception("Menü adı boş bırakılamaz.");
         }
 
-        if (
-            !is_numeric($menu_fiyati) ||
-            (float)$menu_fiyati < 0
-        ) {
+        // MENÜ FİYATI KONTROLÜ
+        if (!is_numeric($menu_fiyati) || (float)$menu_fiyati < 0) {
             throw new Exception("Geçerli bir menü fiyatı girin.");
         }
 
+        // İNDİRİM KONTROLÜ
         if (
             !is_numeric($indirim_orani) ||
             (float)$indirim_orani < 0 ||
@@ -68,22 +80,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             throw new Exception("İndirim oranı 0 ile 100 arasında olmalıdır.");
         }
 
-        if (!is_array($secilen_urunler) || count($secilen_urunler) === 0) {
+        // EN AZ BİR ÜRÜN SEÇİLMELİ
+        if (count($secilen_urunler) === 0) {
             throw new Exception("En az bir ürün seçmelisiniz.");
         }
 
+        // TARİH KONTROLÜ
         if (($baslangic === "") !== ($bitis === "")) {
             throw new Exception("İndirim için başlangıç ve bitiş tarihlerini birlikte girin.");
         }
 
-        if (
-            $baslangic !== "" &&
-            strtotime($baslangic) >= strtotime($bitis)
-        ) {
-            throw new Exception("İndirim bitişi, başlangıç tarihinden sonra olmalıdır.");
+        if ($baslangic !== "" && $bitis !== "") {
+
+            $baslangic_zamani = strtotime($baslangic);
+            $bitis_zamani = strtotime($bitis);
+
+            if (
+                $baslangic_zamani === false ||
+                $bitis_zamani === false ||
+                $baslangic_zamani >= $bitis_zamani
+            ) {
+                throw new Exception("İndirim bitişi, başlangıç tarihinden sonra olmalıdır.");
+            }
         }
 
-        // ÜRÜN ID'LERİNİ DOĞRULA
+        // ÜRÜN ID'LERİNİ TEMİZLE
         $secilen_urunler = array_values(array_unique(
             array_filter(
                 array_map("intval", $secilen_urunler),
@@ -95,6 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             throw new Exception("Geçerli bir ürün seçmelisiniz.");
         }
 
+        // SEÇİLEN ÜRÜNLER BU RESTORANA MI AİT?
         $yer_tutucular = implode(",", array_fill(0, count($secilen_urunler), "?"));
 
         $urun_sorgu = $db->prepare("
@@ -148,7 +170,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $menu_id = $db->lastInsertId();
 
-        // SEÇİLEN ÜRÜNLERİ MENÜYE BAĞLA
+        // ÜRÜNLERİ MENÜYE BAĞLA
         $urun_ekle = $db->prepare("
             INSERT INTO ozel_menu_urunleri (menu_id, urun_id)
             VALUES (?, ?)
@@ -162,19 +184,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $mesaj = "Özel menü başarıyla oluşturuldu.";
 
-        // GÜVENLİK TOKENINI YENİLE
+        // TOKEN YENİLE
         $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
 
-        // FORMUN BAŞARILI KAYITTAN SONRA TEMİZLENMESİ
+        // FORMU TEMİZLE
         $_POST = [];
-
-    } catch (Exception $e) {
-
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
-
-        $hata = $e->getMessage();
 
     } catch (PDOException $e) {
 
@@ -182,15 +196,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $db->rollBack();
         }
 
-        $hata = "Menü kaydedilemedi. Veritabanı ayarlarını kontrol edin.";
+        error_log("Özel menü kayıt hatası: " . $e->getMessage());
+
+        $hata = "Menü kaydedilemedi. Veritabanı işlemini kontrol edin.";
+
+    } catch (Throwable $e) {
+
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+
+        $hata = $e->getMessage();
     }
 }
 
 // FORMDA SEÇİLİ ÜRÜNLER
-$secili_urunler = array_map(
-    "intval",
-    is_array($_POST["urunler"] ?? []) ? $_POST["urunler"] : []
-);
+$post_urunler = $_POST["urunler"] ?? [];
+
+if (!is_array($post_urunler)) {
+    $post_urunler = [];
+}
+
+$secili_urunler = [];
+
+foreach ($post_urunler as $urun_id) {
+
+    if (is_scalar($urun_id) && is_numeric($urun_id)) {
+
+        $urun_id = (int)$urun_id;
+
+        if ($urun_id > 0) {
+            $secili_urunler[] = $urun_id;
+        }
+    }
+}
+
+$secili_urunler = array_values(array_unique($secili_urunler));
 
 ?>
 

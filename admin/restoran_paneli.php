@@ -236,9 +236,9 @@ header p {
     <div class="kartlar">
 
         <div class="kart">
-            <h2>Ürünler</h2>
-            <p>Restoranınızın ürünlerini yönetin.</p>
-            <a class="buton" href="urunler.php">Ürünleri Yönet</a>
+            <h2>Kategoriler</h2>
+            <p>Restoranınızın kategorilerini yönetin.</p>
+            <a class="buton" href="urunler.php">Kategorileri Yönet</a>
         </div>
 
         <div class="kart">
